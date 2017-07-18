@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Client is used for interacting with a CouchDB server.
@@ -25,7 +26,16 @@ func Dial(addr string) (*Client, error) {
 
 // Ping is a simple helper for checking that a server is reachable.
 func (c *Client) Ping() error {
-	return c.relax(http.MethodHead, "/", nil, nil)
+	_, res, err := c.request(http.MethodHead, c.resolve(nil, nil), nil)
+	if err != nil {
+		return err
+	}
+	switch res.StatusCode {
+	case http.StatusOK:
+		return nil
+	default:
+		return ErrInvalidResponse
+	}
 }
 
 // Use returns a database-specific client.
@@ -33,47 +43,39 @@ func (c *Client) Use(db string) *DB {
 	return &DB{c, db}
 }
 
-func (c *Client) relax(method, ref string, body io.Reader, v interface{}) error {
-	req, err := c.request(method, ref, body)
-	if err != nil {
-		return err
+func (c *Client) resolve(path []string, query *url.Values) string {
+	ref := url.URL{Path: "/" + strings.Join(path, "/")}
+	if query != nil {
+		ref.RawQuery = query.Encode()
 	}
-	return c.response(req, v)
+	return c.base.ResolveReference(&ref).String()
 }
 
-func (c *Client) url(input string) (string, error) {
-	ref, err := url.Parse(input)
-	if err != nil {
-		return "", err
-	}
-	return c.base.ResolveReference(ref).String(), nil
-}
-
-func (c *Client) request(method, ref string, body io.Reader) (*http.Request, error) {
-	url, err := c.url(ref)
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Client) request(method, url string, body io.Reader) (*http.Request, *http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req.Header.Set("accept", "application/json")
 
-	return req, nil
+	res, err := c.http.Do(req)
+	return req, res, err
 }
 
-func (c *Client) response(req *http.Request, v interface{}) error {
-	res, err := c.http.Do(req)
-	if err != nil {
-		return err
-	}
+func (c *Client) decode(res *http.Response, v interface{}) error {
 	defer res.Body.Close()
 	if v != nil {
 		d := json.NewDecoder(res.Body)
 		return d.Decode(v)
 	}
 	return nil
+}
+
+func (c *Client) error(res *http.Response) error {
+	var cerr CouchDBError
+	if err := c.decode(res, &cerr); err != nil {
+		return err
+	}
+	return &cerr
 }
