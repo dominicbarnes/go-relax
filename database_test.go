@@ -56,3 +56,17 @@ func TestDBExistsNetworkError(t *testing.T) {
 	assert.Error(t, err)
 	assert.False(t, exists)
 }
+
+func TestDBExistsIntegration(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
+	client, err := Dial(integrationURL)
+	require.NoError(t, err)
+	db := client.Use("should_not_exist")
+
+	exists, err := db.Exists()
+	assert.NoError(t, err)
+	assert.False(t, exists)
+}

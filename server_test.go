@@ -64,3 +64,16 @@ func TestClientInfoServerError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, info)
 }
+
+func TestClientInfoIntegration(t *testing.T) {
+	c, err := Dial(integrationURL)
+	require.NoError(t, err)
+
+	info, err := c.Info()
+	assert.NoError(t, err)
+	assert.EqualValues(t, &ServerInfo{
+		CouchDB: "Welcome",
+		Vendor:  map[string]interface{}{"name": "The Apache Software Foundation"},
+		Version: "2.0.0",
+	}, info)
+}

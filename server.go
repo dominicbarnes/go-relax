@@ -18,6 +18,8 @@ func (c *Client) Info() (*ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
+
 	switch res.StatusCode {
 	case http.StatusOK:
 		var info ServerInfo

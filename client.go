@@ -30,6 +30,8 @@ func (c *Client) Ping() error {
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
+
 	switch res.StatusCode {
 	case http.StatusOK:
 		return nil

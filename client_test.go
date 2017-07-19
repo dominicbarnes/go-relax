@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const integrationURL = "http://localhost:5984"
 const brokenURL = "http://localhost"
 
 func TestDial(t *testing.T) {
@@ -53,4 +54,14 @@ func TestClientPingServerError(t *testing.T) {
 	c, err := Dial(ts.URL)
 	require.NoError(t, err)
 	assert.Error(t, c.Ping())
+}
+
+func TestClientPingIntegration(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
+	c, err := Dial(integrationURL)
+	require.NoError(t, err)
+	assert.NoError(t, c.Ping())
 }

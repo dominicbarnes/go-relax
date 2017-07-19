@@ -18,6 +18,7 @@ func (db *DB) Exists() (bool, error) {
 		return false, err
 	}
 	defer res.Body.Close()
+
 	switch res.StatusCode {
 	case http.StatusOK:
 		return true, nil
@@ -25,5 +26,21 @@ func (db *DB) Exists() (bool, error) {
 		return false, nil
 	default:
 		return false, ErrInvalidResponse
+	}
+}
+
+func (db *DB) Get(id string, v interface{}) error {
+	url := db.client.resolve([]string{db.name, id}, nil)
+	res, err := db.client.request(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		return db.client.decode(res, v)
+	default:
+		return db.client.error(res)
 	}
 }
