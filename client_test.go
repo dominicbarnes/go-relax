@@ -14,54 +14,65 @@ const integrationURL = "http://localhost:5984"
 const brokenURL = "http://localhost"
 
 func TestDial(t *testing.T) {
-	c, err := Dial(brokenURL)
-	assert.NoError(t, err)
-	assert.NotNil(t, c)
-}
+	t.Run("Simple", func(t *testing.T) {
+		c, err := Dial(integrationURL)
+		assert.NoError(t, err)
+		assert.NotNil(t, c)
+	})
 
-func TestDialInvalidURL(t *testing.T) {
-	c, err := Dial("")
-	assert.EqualError(t, err, "parse : empty url")
-	assert.Nil(t, c)
+	t.Run("Invalid URL", func(t *testing.T) {
+		c, err := Dial("")
+		assert.EqualError(t, err, "parse : empty url")
+		assert.Nil(t, c)
+	})
 }
 
 func TestClientPing(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodHead, r.Method)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer ts.Close()
+	t.Run("Simple", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodHead, r.Method)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer ts.Close()
 
-	c, err := Dial(ts.URL)
-	require.NoError(t, err)
-	assert.NoError(t, c.Ping())
+		c := dial(t, ts)
+		assert.NoError(t, c.Ping())
+	})
+
+	t.Run("Server Error", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`boom`))
+		}))
+		defer ts.Close()
+
+		c := dial(t, ts)
+		assert.Error(t, c.Ping())
+
+	})
+
+	t.Run("Network Error", func(t *testing.T) {
+		c, err := Dial(brokenURL)
+		require.NoError(t, err)
+		assert.Error(t, c.Ping())
+	})
 }
 
-func TestClientPingNetworkError(t *testing.T) {
-	c, err := Dial(brokenURL)
-	require.NoError(t, err)
-	assert.Error(t, c.Ping())
-}
-
-func TestClientPingServerError(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// send a response so we can test the decoding
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`boom`))
-	}))
-	defer ts.Close()
-
-	c, err := Dial(ts.URL)
-	require.NoError(t, err)
-	assert.Error(t, c.Ping())
-}
-
-func TestClientPingIntegration(t *testing.T) {
+func TestClientIntegration(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
 
 	c, err := Dial(integrationURL)
 	require.NoError(t, err)
-	assert.NoError(t, c.Ping())
+
+	t.Run("Ping", func(t *testing.T) {
+		assert.NoError(t, c.Ping())
+	})
+}
+
+func dial(t *testing.T, ts *httptest.Server) *Client {
+	c, err := Dial(ts.URL)
+	require.NoError(t, err)
+	return c
 }

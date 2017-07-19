@@ -29,6 +29,8 @@ func (db *DB) Exists() (bool, error) {
 	}
 }
 
+// Get retrieves a document with the given ID. It will be unmarshalled into the
+// given value.
 func (db *DB) Get(id string, v interface{}) error {
 	url := db.client.resolve([]string{db.name, id}, nil)
 	res, err := db.client.request(http.MethodGet, url, nil)
