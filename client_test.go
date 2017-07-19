@@ -30,7 +30,10 @@ func TestDial(t *testing.T) {
 func TestClientPing(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodHead, r.Method)
+			// ensure we got the expected request
+			request(t, r, http.MethodHead, "/")
+
+			// 200 OK => server is alive
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer ts.Close()
@@ -40,15 +43,11 @@ func TestClientPing(t *testing.T) {
 	})
 
 	t.Run("Server Error", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`boom`))
-		}))
+		ts := httptest.NewServer(http.HandlerFunc(boom))
 		defer ts.Close()
 
 		c := dial(t, ts)
 		assert.Error(t, c.Ping())
-
 	})
 
 	t.Run("Network Error", func(t *testing.T) {
@@ -75,4 +74,16 @@ func dial(t *testing.T, ts *httptest.Server) *Client {
 	c, err := Dial(ts.URL)
 	require.NoError(t, err)
 	return c
+}
+
+func request(t *testing.T, r *http.Request, method, path string) {
+	assert.Equal(t, "application/json", r.Header.Get("Accept"))
+	assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+	assert.Equal(t, method, r.Method)
+	assert.Equal(t, path, r.URL.Path)
+}
+
+func boom(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("boom!"))
 }

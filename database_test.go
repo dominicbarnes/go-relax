@@ -14,10 +14,7 @@ func TestDBExists(t *testing.T) {
 	t.Run("True", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// ensure we got the expected request
-			require.Equal(t, "application/json", r.Header.Get("Accept"))
-			require.Equal(t, "application/json", r.Header.Get("Content-Type"))
-			require.Equal(t, http.MethodHead, r.Method)
-			require.Equal(t, "/test", r.URL.Path)
+			request(t, r, http.MethodHead, "/test")
 
 			// 200 OK => db exists.
 			w.WriteHeader(http.StatusOK)

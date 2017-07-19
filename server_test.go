@@ -14,10 +14,7 @@ func TestClientInfo(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// ensure we got the expected request
-			require.Equal(t, "application/json", r.Header.Get("Accept"))
-			require.Equal(t, "application/json", r.Header.Get("Content-Type"))
-			require.Equal(t, http.MethodGet, r.Method)
-			require.Equal(t, "/", r.URL.Path)
+			request(t, r, http.MethodGet, "/")
 
 			// send a response so we can test the decoding
 			w.Header().Set("Content-Type", "application/json")
@@ -41,11 +38,7 @@ func TestClientInfo(t *testing.T) {
 	})
 
 	t.Run("Server Error", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// send a response so we can test the decoding
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`boom`))
-		}))
+		ts := httptest.NewServer(http.HandlerFunc(boom))
 		defer ts.Close()
 
 		c := dial(t, ts)
