@@ -18,7 +18,7 @@ func TestDBExistsTrue(t *testing.T) {
 		require.Equal(t, http.MethodHead, r.Method)
 		require.Equal(t, "/test", r.URL.Path)
 
-		// send back a 200 OK to indicate the db exists.
+		// 200 OK => db exists.
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
@@ -34,13 +34,7 @@ func TestDBExistsTrue(t *testing.T) {
 
 func TestDBExistsFalse(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// ensure we got the expected request
-		require.Equal(t, "application/json", r.Header.Get("Accept"))
-		require.Equal(t, "application/json", r.Header.Get("Content-Type"))
-		require.Equal(t, http.MethodHead, r.Method)
-		require.Equal(t, "/test", r.URL.Path)
-
-		// send back a 404 Not Found to indicate the db does not exist.
+		// 404 Not Found => db does not exist.
 		http.NotFound(w, r)
 	}))
 
@@ -50,5 +44,15 @@ func TestDBExistsFalse(t *testing.T) {
 
 	exists, err := db.Exists()
 	assert.NoError(t, err)
+	assert.False(t, exists)
+}
+
+func TestDBExistsNetworkError(t *testing.T) {
+	client, err := Dial(brokenURL)
+	require.NoError(t, err)
+	db := client.Use("test")
+
+	exists, err := db.Exists()
+	assert.Error(t, err)
 	assert.False(t, exists)
 }

@@ -39,3 +39,28 @@ func TestClientInfo(t *testing.T) {
 		Version: "1.3.1",
 	}, info)
 }
+
+func TestClientInfoNetworkError(t *testing.T) {
+	c, err := Dial(brokenURL)
+	require.NoError(t, err)
+
+	info, err := c.Info()
+	assert.Error(t, err)
+	assert.Nil(t, info)
+}
+
+func TestClientInfoServerError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// send a response so we can test the decoding
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`boom`))
+	}))
+	defer ts.Close()
+
+	c, err := Dial(ts.URL)
+	require.NoError(t, err)
+
+	info, err := c.Info()
+	assert.Error(t, err)
+	assert.Nil(t, info)
+}
