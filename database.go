@@ -13,7 +13,7 @@ type DB struct {
 // Exists checks for the database's existence via `HEAD /:db`.
 func (db *DB) Exists() (bool, error) {
 	url := db.client.resolve([]string{db.name}, nil)
-	_, res, err := db.client.request(http.MethodHead, url, nil)
+	res, err := db.client.request(http.MethodHead, url, nil)
 	if err != nil {
 		return false, err
 	}

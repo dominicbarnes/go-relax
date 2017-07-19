@@ -26,7 +26,7 @@ func Dial(addr string) (*Client, error) {
 
 // Ping is a simple helper for checking that a server is reachable.
 func (c *Client) Ping() error {
-	_, res, err := c.request(http.MethodHead, c.resolve(nil, nil), nil)
+	res, err := c.request(http.MethodHead, c.resolve(nil, nil), nil)
 	if err != nil {
 		return err
 	}
@@ -51,16 +51,16 @@ func (c *Client) resolve(path []string, query *url.Values) string {
 	return c.base.ResolveReference(&ref).String()
 }
 
-func (c *Client) request(method, url string, body io.Reader) (*http.Request, *http.Response, error) {
+func (c *Client) request(method, url string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	req.Header.Set("accept", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
-	res, err := c.http.Do(req)
-	return req, res, err
+	return c.http.Do(req)
 }
 
 func (c *Client) decode(res *http.Response, v interface{}) error {

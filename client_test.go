@@ -27,6 +27,8 @@ func TestClientPing(t *testing.T) {
 		assert.Equal(t, http.MethodHead, r.Method)
 		w.WriteHeader(http.StatusOK)
 	}))
+	defer ts.Close()
+
 	c, err := Dial(ts.URL)
 	require.NoError(t, err)
 	assert.NoError(t, c.Ping())

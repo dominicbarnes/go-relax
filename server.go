@@ -14,7 +14,7 @@ type ServerInfo struct {
 
 // Info requests basic server information.
 func (c *Client) Info() (*ServerInfo, error) {
-	_, res, err := c.request(http.MethodGet, c.resolve(nil, nil), nil)
+	res, err := c.request(http.MethodGet, c.resolve(nil, nil), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -12,10 +12,21 @@ import (
 
 func TestClientInfo(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// ensure we got the expected request
+		require.Equal(t, "application/json", r.Header.Get("Accept"))
+		require.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		require.Equal(t, http.MethodGet, r.Method)
+		require.Equal(t, "/", r.URL.Path)
+
+		// send a response so we can test the decoding
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"couchdb":"Welcome","uuid":"85fb71bf700c17267fef77535820e371","vendor":{"name":"The Apache Software Foundation","version":"1.3.1"},"version":"1.3.1"}`))
 	}))
+	defer ts.Close()
+
 	c, err := Dial(ts.URL)
 	require.NoError(t, err)
+
 	info, err := c.Info()
 	assert.NoError(t, err)
 	assert.EqualValues(t, &ServerInfo{
