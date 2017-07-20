@@ -83,14 +83,13 @@ func TestDBGet(t *testing.T) {
 		db := dial(t, ts).Use("db")
 
 		type S struct {
-			ID     string `json:"_id"`
-			Rev    string `json:"_rev"`
-			Answer int    `json:"answer"`
+			Document
+			Answer int `json:"answer"`
 		}
 		var s S
 
 		assert.NoError(t, db.Get("doc", &s))
-		assert.EqualValues(t, S{"document_1", "rev_1", 42}, s)
+		assert.EqualValues(t, S{Document{"document_1", "rev_1"}, 42}, s)
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
@@ -107,9 +106,8 @@ func TestDBGet(t *testing.T) {
 		db := dial(t, ts).Use("db")
 
 		type S struct {
-			ID     string `json:"_id"`
-			Rev    string `json:"_rev"`
-			Answer int    `json:"answer"`
+			Document
+			Answer int `json:"answer"`
 		}
 		var s S
 
