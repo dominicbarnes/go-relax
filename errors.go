@@ -11,7 +11,7 @@ var ErrInvalidResponse = errors.New("invalid response")
 
 // CouchDBError is used to decode errors reported by CouchDB.
 type CouchDBError struct {
-	Code   string `json:"code"`
+	Code   string `json:"error"`
 	Reason string `json:"reason"`
 }
 
